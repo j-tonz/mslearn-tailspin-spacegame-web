@@ -1,3 +1,41 @@
-pool: MyAgentPool
+trigger:
+  - main
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  buildConfiguration: 'Release'
+
 steps:
-- bash: echo hello world
+  - task: UseDotNet@2
+    inputs:
+      packageType: 'sdk'
+      version: '6.0.x'
+
+  - task: DotNetCoreCLI@2
+    displayName: 'Restore dependencies'
+    inputs:
+      command: 'restore'
+      projects: '**/*.csproj'
+
+  - task: DotNetCoreCLI@2
+    displayName: 'Build the project'
+    inputs:
+      command: 'build'
+      projects: '**/*.csproj'
+      arguments: '--configuration $(buildConfiguration)'
+
+  - task: DotNetCoreCLI@2
+    displayName: 'Publish the project'
+    inputs:
+      command: 'publish'
+      publishWebProjects: true
+      arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+      zipAfterPublish: true
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Artifact'
+    inputs:
+      pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      artifactName: 'drop'
